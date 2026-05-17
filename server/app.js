@@ -19,7 +19,6 @@ const User = require("./models/User");
 const axios = require("axios");
 
 dotenv.config();
-connectDB();
 
 const app = express();
 
@@ -115,21 +114,36 @@ const seedDefaultAdmin = async () => {
 };
 
 const PORT = process.env.PORT || 5000;
+let server;
 
-const server = app.listen(PORT, async () => {
-  await seedDefaultAdmin();
-  await runEscalationChecks();
-  startEscalationEngine();
-  console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    server = app.listen(PORT, async () => {
+      await seedDefaultAdmin();
+      await runEscalationChecks();
+      startEscalationEngine();
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Graceful shutdown
 const shutdown = () => {
   console.log("Gracefully shutting down...");
-  server.close(() => {
-    console.log("Server closed.");
+  if (server) {
+    server.close(() => {
+      console.log("Server closed.");
+      process.exit(0);
+    });
+  } else {
     process.exit(0);
-  });
+  }
 };
 
 process.on("SIGTERM", shutdown);
