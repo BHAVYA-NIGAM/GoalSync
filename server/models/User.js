@@ -46,8 +46,6 @@ const userSchema = new mongoose.Schema(
     timestamps: true
   }
 );
-
-userSchema.index({ email: 1 });
 userSchema.index({ department: 1, role: 1 });
 userSchema.index({ managerId: 1 });
 
