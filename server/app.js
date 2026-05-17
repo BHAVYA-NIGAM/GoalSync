@@ -78,7 +78,7 @@ app.get("/health", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.redirect("/public/pages/login.html");
+  res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 });
 
 app.use(errorMiddleware);

@@ -87,6 +87,39 @@ function saveSession(data) {
   localStorage.setItem("user", JSON.stringify(data.user));
 }
 
+function normalizeSessionUser(user) {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id || user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    department: user.department,
+    managerId: user.managerId
+  };
+}
+
+async function syncSessionUser() {
+  const token = getToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const user = await apiFetch("/auth/me");
+
+  if (!user) {
+    return null;
+  }
+
+  const normalizedUser = normalizeSessionUser(user);
+  saveSession({ token, user: normalizedUser });
+  return normalizedUser;
+}
+
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");

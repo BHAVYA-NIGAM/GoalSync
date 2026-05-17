@@ -73,7 +73,7 @@ Update the `.env` file with MongoDB, JWT, email, Teams, and Microsoft values.
 npm run dev
 ```
 
-Visit [http://localhost:5000](http://localhost:5000).
+Visit [http://localhost:8000](http://localhost:8000).
 
 ## API Overview
 
@@ -151,7 +151,3 @@ Visit [http://localhost:5000](http://localhost:5000).
 - Microsoft SSO is implemented as a lightweight Graph-based flow through `/api/auth/sso`.
 - Teams notifications are webhook-based for a fast demo setup.
 - Excel export uses an HTML table with Excel MIME type to stay dependency-light.
-
-## Deployment
-
-Detailed deployment steps are available in [DEPLOYMENT.md](/Users/bhavyanigam/Documents/GoalSync/goal-portal/DEPLOYMENT.md).

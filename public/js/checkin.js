@@ -1,6 +1,10 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const user = requireAuth();
+  let user = requireAuth();
   if (!user) return;
+
+  const liveUser = await syncSessionUser();
+  if (!liveUser) return;
+  user = liveUser;
 
   setSidebar("checkin");
   setHeader(
