@@ -16,6 +16,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const { startEscalationEngine, runEscalationChecks } = require("./utils/escalationService");
 const User = require("./models/User");
+const axios = require("axios");
 
 dotenv.config();
 connectDB();
@@ -133,3 +134,14 @@ const shutdown = () => {
 
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
+
+const URL = 'https://goalsync-e13q.onrender.com';
+
+setInterval(async () => {
+  try {
+    const response = await axios.get(URL);
+    console.log('Pinged successfully:', response.status);
+  } catch (err) {
+    console.log('Ping failed');
+  }
+}, 30000);
