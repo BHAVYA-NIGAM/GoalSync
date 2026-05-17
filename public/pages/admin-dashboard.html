@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - GoalSync</title>
+    <link rel="stylesheet" href="/public/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=notifications"
+    />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+</head>
+  <body>
+    <div class="app-shell">
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="brand-panel">
+            <div class="brand-mark">GS</div>
+            <div class="brand">GoalSync</div>
+            <p>
+              Admin control center for cycle governance, completion tracking,
+              audit visibility, and escalations.
+            </p>
+          </div>
+          <nav class="nav-links" data-sidebar></nav>
+        </aside>
+        <main class="main">
+          <div class="topbar">
+            <div class="page-title">
+              <h1 id="page-title"></h1>
+              <p id="page-text"></p>
+            </div>
+            <div class="topbar-right">
+              <div class="profile-box" data-topbar-user></div>
+            </div>
+          </div>
+          <!-- <section class="hero-banner">
+          <h2>See what is complete, what is blocked, and where the cycle needs intervention.</h2>
+          <p>Track organization progress in real time, review escalations, and monitor employee and manager completion across the active cycle.</p>
+        </section> -->
+          <section id="stats" class="grid stats-grid"></section>
+          <section class="split" style="margin-top: 20px">
+            <div class="card content-card">
+              <h3>Department Analytics</h3>
+              <div id="department-list" class="notification-list"></div>
+            </div>
+            <div class="card content-card">
+              <h3>Escalation Logs</h3>
+              <div id="escalation-list" class="log-list"></div>
+            </div>
+          </section>
+          <section class="completion-grid" style="margin-top: 20px">
+            <div class="card content-card">
+              <h3>Employee Completion Dashboard</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Employee</th>
+                      <th>Department</th>
+                      <th>Manager</th>
+                      <th>Approved Goals</th>
+                      <th>Check-Ins</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="employee-completion-body"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card content-card">
+              <h3>Manager Completion Dashboard</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Manager</th>
+                      <th>Department</th>
+                      <th>Team Size</th>
+                      <th>Completed Employees</th>
+                      <th>Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody id="manager-completion-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+          <section class="card content-card" style="margin-top: 20px">
+            <h3>Locked Goals Requiring Admin Intervention</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Goal</th>
+                    <th>Status</th>
+                    <th>Edit Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="locked-goal-body"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="card content-card" style="margin-top: 20px">
+            <h3>Manager Access Requests</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Manager</th>
+                    <th>Employee</th>
+                    <th>Goal</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Expires</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="access-request-body"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="card content-card" style="margin-top: 20px">
+            <div class="topbar">
+              <h3 style="margin: 0">Goal Management</h3>
+              <div class="filters" style="margin-bottom: 0">
+                <input
+                  id="admin-goal-search"
+                  type="text"
+                  placeholder="Search employee, goal, thrust area"
+                  oninput="renderAdminGoalTable()"
+                />
+                <select
+                  id="admin-goal-department"
+                  onchange="renderAdminGoalTable()"
+                ></select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Goal</th>
+                    <th>Thrust Area</th>
+                    <th>Target</th>
+                    <th>Weightage</th>
+                    <th>Status</th>
+                    <th>Save</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-goal-management-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <div class="modal" id="goal-detail-modal">
+      <div class="card modal-content" style="max-width: 760px">
+        <div class="topbar">
+          <div>
+            <h3 id="goal-detail-title" style="margin: 0">Goal Details</h3>
+            <p class="muted" id="goal-detail-progress">Not Started</p>
+          </div>
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('goal-detail-modal')"
+          >
+            Close
+          </button>
+        </div>
+        <input type="hidden" id="goal-detail-id" />
+        <div class="form-grid">
+          <div class="field">
+            <label>Thrust Area</label
+            ><input id="goal-detail-thrust-area" type="text" />
+          </div>
+          <div class="field">
+            <label>Goal Title</label><input id="goal-detail-name" type="text" />
+          </div>
+          <div class="field">
+            <label>Description</label
+            ><textarea id="goal-detail-description"></textarea>
+          </div>
+          <div class="field">
+            <label>UoM Type</label
+            ><select id="goal-detail-uom">
+              <option>Numeric Min</option>
+              <option>Numeric Max</option>
+              <option>Percentage Min</option>
+              <option>Percentage Max</option>
+              <option>Timeline</option>
+              <option>Zero-based</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Target</label
+            ><input id="goal-detail-target" type="number" min="0" />
+          </div>
+          <div class="field">
+            <label>Weightage</label
+            ><input
+              id="goal-detail-weightage"
+              type="number"
+              min="0"
+              max="100"
+            />
+          </div>
+          <div class="field">
+            <label>Status</label
+            ><select id="goal-detail-status">
+              <option value="Draft">Draft</option>
+              <option value="Submitted">Submitted</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Rework">Rework</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deadline</label
+            ><input id="goal-detail-deadline" type="date" />
+          </div>
+          <div class="field">
+            <label>Manager Remarks</label>
+            <div
+              id="goal-detail-manager-comment"
+              class="notification-item small-text"
+            ></div>
+          </div>
+          <div class="field">
+            <label>Comment / Review Note</label
+            ><textarea id="goal-detail-comment"></textarea>
+          </div>
+          <div class="field">
+            <label>Access Control</label>
+            <div
+              id="goal-detail-access-note"
+              class="notification-item small-text"
+            ></div>
+          </div>
+          <div class="field">
+            <label>Assigned Employees</label>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Weightage</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                  </tr>
+                </thead>
+                <tbody id="goal-detail-assignees"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button
+              id="goal-detail-save-btn"
+              class="btn btn-primary"
+              type="button"
+              onclick="saveGoalDetailsFromModal()"
+            >
+              Save Goal
+            </button>
+            <button
+              id="goal-detail-approve-btn"
+              class="btn btn-success"
+              type="button"
+              onclick="approveGoalFromModal()"
+            >
+              Approve
+            </button>
+            <button
+              id="goal-detail-rework-btn"
+              class="btn btn-warning"
+              type="button"
+              onclick="reworkGoalFromModal()"
+            >
+              Rework
+            </button>
+            <button
+              id="goal-detail-reject-btn"
+              class="btn btn-danger"
+              type="button"
+              onclick="rejectGoalFromModal()"
+            >
+              Reject
+            </button>
+            <button
+              id="goal-detail-access-btn"
+              class="btn btn-secondary"
+              type="button"
+              onclick="requestGoalEditAccess()"
+              style="display: none"
+            >
+              Request 24h Access
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/public/js/common.js"></script>
+    <script src="/public/js/admin.js"></script>
+  </body>
+</html>

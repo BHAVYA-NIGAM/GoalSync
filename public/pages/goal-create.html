@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Goal Setup - GoalSync</title>
+    <link rel="stylesheet" href="/public/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=notifications"
+    />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+</head>
+  <body>
+    <div class="app-shell">
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="brand-panel">
+            <div class="brand-mark">GS</div>
+            <div class="brand">GoalSync</div>
+            <p>
+              Plan goals by thrust area, balance weightage to exactly 100%, and
+              prepare a clean submission for approval.
+            </p>
+          </div>
+          <nav class="nav-links" data-sidebar></nav>
+        </aside>
+        <main class="main">
+          <div class="topbar">
+            <div class="page-title">
+              <h1 id="page-title"></h1>
+              <p id="page-text"></p>
+            </div>
+            <div class="topbar-right">
+              <span id="window-badge" class="badge"></span>
+              <div class="profile-box" data-topbar-user></div>
+            </div>
+          </div>
+          <section class="two-column">
+            <div class="hero-banner">
+              </p>
+              <div class="info-grid">
+                <div class="info-pill">
+                  <span>Goal Count</span
+                  ><strong>Maximum 8 goals per employee.</strong>
+                </div>
+                <div class="info-pill">
+                  <span>Minimum Weightage</span
+                  ><strong>Each goal must be at least 10%.</strong>
+                </div>
+                <div class="info-pill">
+                  <span>Submission Rule</span
+                  ><strong>Total draft weightage must equal 100%.</strong>
+                </div>
+              </div>
+            </div>
+            <div class="schedule-card">
+              <h4>Cycle Schedule</h4>
+              <div class="schedule-list">
+                <div><strong>Phase 1</strong><span>Starts 1st May</span></div>
+                <div><strong>Q1 Check-In</strong><span>July</span></div>
+                <div><strong>Q2 Check-In</strong><span>October</span></div>
+                <div><strong>Q3 Check-In</strong><span>January</span></div>
+                <div>
+                  <strong>Q4 / Annual</strong><span>March / April</span>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section id="goal-form-card" class="card content-card">
+            <div class="topbar">
+              <h3 style="margin: 0">Create or Edit Goal</h3>
+              <div id="weightage-summary" class="muted"></div>
+            </div>
+            <form id="goal-form" class="form-grid">
+              <input type="hidden" id="goalId" />
+              <div class="field">
+                <label>Thrust Area</label>
+                <input type="text" id="thrustArea" name="thrustArea" required />
+              </div>
+              <div class="field">
+                <label>Goal Title</label>
+                <input type="text" id="title" name="title" required />
+              </div>
+              <div class="field">
+                <label>Description</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  required
+                ></textarea>
+              </div>
+              <div class="field">
+                <label>UoM Type</label>
+                <select id="uom" name="uom" required>
+                  <option>Numeric Min</option>
+                  <option>Numeric Max</option>
+                  <option>Percentage Min</option>
+                  <option>Percentage Max</option>
+                  <option>Timeline</option>
+                  <option>Zero-based</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Target</label>
+                <input
+                  type="number"
+                  id="target"
+                  name="target"
+                  min="0"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label>Weightage</label>
+                <input
+                  type="number"
+                  id="weightage"
+                  name="weightage"
+                  min="0"
+                  max="100"
+                  required
+                />
+              </div>
+              <div class="field">
+                <label>Deadline (for timeline goals)</label>
+                <input type="date" id="deadline" name="deadline" />
+              </div>
+              <div class="toolbar">
+                <button class="btn btn-primary" type="submit">Save Goal</button>
+                <button
+                  class="btn btn-success"
+                  id="submit-all-btn"
+                  type="button"
+                >
+                  Submit All Goals
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card content-card" style="margin-top: 20px">
+            <h3>Goal List</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Thrust Area</th>
+                    <th>Title</th>
+                    <th>UoM</th>
+                    <th>Target</th>
+                    <th>Weightage</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="goal-list-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <div class="modal" id="goal-detail-modal">
+      <div class="card modal-content" style="max-width: 760px">
+        <div class="topbar">
+          <div>
+            <h3 id="goal-detail-title" style="margin: 0">Goal Details</h3>
+            <p class="muted" id="goal-detail-progress">Not Started</p>
+          </div>
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('goal-detail-modal')"
+          >
+            Close
+          </button>
+        </div>
+        <input type="hidden" id="goal-detail-id" />
+        <div class="form-grid">
+          <div class="field">
+            <label>Thrust Area</label
+            ><input id="goal-detail-thrust-area" type="text" />
+          </div>
+          <div class="field">
+            <label>Goal Title</label><input id="goal-detail-name" type="text" />
+          </div>
+          <div class="field">
+            <label>Description</label
+            ><textarea id="goal-detail-description"></textarea>
+          </div>
+          <div class="field">
+            <label>UoM Type</label
+            ><select id="goal-detail-uom">
+              <option>Numeric Min</option>
+              <option>Numeric Max</option>
+              <option>Percentage Min</option>
+              <option>Percentage Max</option>
+              <option>Timeline</option>
+              <option>Zero-based</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Target</label
+            ><input id="goal-detail-target" type="number" min="0" />
+          </div>
+          <div class="field">
+            <label>Weightage</label
+            ><input
+              id="goal-detail-weightage"
+              type="number"
+              min="0"
+              max="100"
+            />
+          </div>
+          <div class="field">
+            <label>Status</label
+            ><select id="goal-detail-status">
+              <option value="Draft">Draft</option>
+              <option value="Submitted">Submitted</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Rework">Rework</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Deadline</label
+            ><input id="goal-detail-deadline" type="date" />
+          </div>
+          <div class="field">
+            <label>Manager Remarks</label>
+            <div
+              id="goal-detail-manager-comment"
+              class="notification-item small-text"
+            ></div>
+          </div>
+          <div class="field">
+            <label>Comment / Review Note</label
+            ><textarea id="goal-detail-comment"></textarea>
+          </div>
+          <div class="field">
+            <label>Access Control</label>
+            <div
+              id="goal-detail-access-note"
+              class="notification-item small-text"
+            ></div>
+          </div>
+          <div class="field">
+            <label>Assigned Employees</label>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Weightage</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                  </tr>
+                </thead>
+                <tbody id="goal-detail-assignees"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="toolbar">
+            <button
+              id="goal-detail-save-btn"
+              class="btn btn-primary"
+              type="button"
+              onclick="saveGoalDetailsFromModal()"
+            >
+              Save Goal
+            </button>
+            <button
+              id="goal-detail-approve-btn"
+              class="btn btn-success"
+              type="button"
+              onclick="approveGoalFromModal()"
+            >
+              Approve
+            </button>
+            <button
+              id="goal-detail-rework-btn"
+              class="btn btn-warning"
+              type="button"
+              onclick="reworkGoalFromModal()"
+            >
+              Rework
+            </button>
+            <button
+              id="goal-detail-reject-btn"
+              class="btn btn-danger"
+              type="button"
+              onclick="rejectGoalFromModal()"
+            >
+              Reject
+            </button>
+            <button
+              id="goal-detail-access-btn"
+              class="btn btn-secondary"
+              type="button"
+              onclick="requestGoalEditAccess()"
+              style="display: none"
+            >
+              Request 24h Access
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="/public/js/common.js"></script>
+    <script src="/public/js/goals.js"></script>
+  </body>
+</html>

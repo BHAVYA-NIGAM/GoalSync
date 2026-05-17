@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoalSync Login</title>
+    <link rel="stylesheet" href="/public/css/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=notifications"
+    />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+</head>
+  <body>
+    <div class="auth-page">
+      <section class="auth-hero">
+        <div>
+          <div class="brand">GoalSync</div>
+          <h1>In-house goal setting that actually stays aligned.</h1>
+          <p>
+            GoalSync brings employees, managers, and HR into one clear workflow for
+            goal planning, approvals, quarterly check-ins, and organization-level analytics.
+          </p>
+        </div>
+        <div class="auth-points">
+          <div class="auth-point">
+            <strong>Approval workflow</strong>
+            <p>Submit goals, review them with managers, and lock approved targets.</p>
+          </div>
+          <div class="auth-point">
+            <strong>Quarterly discipline</strong>
+            <p>Check in against the right quarterly window and auto-calculate performance.</p>
+          </div>
+          <div class="auth-point">
+            <strong>Hackathon-ready integrations</strong>
+            <p>Email, Teams, and Microsoft SSO support in a simple Node + Express app.</p>
+          </div>
+        </div>
+      </section>
+      <section class="auth-card">
+        <div class="card auth-form">
+          <h2>Sign in</h2>
+          <p>Use your GoalSync account or demo Microsoft SSO.</p>
+          <form id="login-form" class="form-grid">
+            <div class="field">
+              <label>Email</label>
+              <input type="email" name="email" placeholder="employee@company.com" required />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" name="password" placeholder="Enter password" required />
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Login</button>
+          </form>
+          <div class="toolbar" style="margin-top: 14px;">
+            <button id="sso-login-btn" class="btn btn-secondary" type="button">Microsoft SSO</button>
+            <a class="btn btn-secondary" href="/public/pages/register.html">Create account</a>
+          </div>
+        </div>
+      </section>
+    </div>
+    <script src="/public/js/common.js"></script>
+    <script src="/public/js/auth.js"></script>
+  </body>
+</html>
