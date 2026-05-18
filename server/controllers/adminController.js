@@ -5,6 +5,7 @@ const Escalation = require("../models/Escalation");
 const Notification = require("../models/Notification");
 const { toCsv, toExcelTable } = require("../utils/csvUtils");
 const logAudit = require("../utils/auditLogger");
+const { deleteExpiredEscalations, getEscalationCutoff } = require("../utils/escalationService");
 
 const getAuditLogs = async (req, res) => {
   const logs = await AuditLog.find()
@@ -58,7 +59,11 @@ const getReports = async (req, res) => {
 };
 
 const getEscalations = async (req, res) => {
-  const escalations = await Escalation.find()
+  await deleteExpiredEscalations();
+
+  const escalations = await Escalation.find({
+    createdAt: { $gte: getEscalationCutoff() }
+  })
     .populate("targetUserId", "name email role")
     .populate("goalId", "title status")
     .sort({ createdAt: -1 });
@@ -67,10 +72,14 @@ const getEscalations = async (req, res) => {
 };
 
 const getDashboard = async (req, res) => {
+  await deleteExpiredEscalations();
+
   const goals = await Goal.find().populate("ownerId", "department name managerId").populate("managerId", "name");
   const users = await User.find().populate("managerId", "name");
   const notifications = await Notification.find().sort({ createdAt: -1 }).limit(10);
-  const escalations = await Escalation.find().sort({ createdAt: -1 }).limit(20);
+  const escalations = await Escalation.find({
+    createdAt: { $gte: getEscalationCutoff() }
+  }).sort({ createdAt: -1 }).limit(20);
   const lockedGoals = await Goal.find({ locked: true })
     .populate("ownerId", "name department")
     .sort({ updatedAt: -1 })
@@ -151,7 +160,10 @@ const getDashboard = async (req, res) => {
       title: goal.title,
       employee: goal.ownerId?.name || "",
       department: goal.ownerId?.department || "",
-      status: goal.status
+      status: goal.status,
+      editAccessStatus: goal.editAccess?.status || "none",
+      requestedBy: goal.editAccess?.requestedByManagerId?.name || "",
+      requestComment: goal.editAccess?.requestComment || ""
     })),
     accessRequests: accessRequests.map((goal) => ({
       id: goal._id,

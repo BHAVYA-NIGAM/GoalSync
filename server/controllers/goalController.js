@@ -78,6 +78,61 @@ const createGoalNotification = async ({ userId, title, message, type = "info", r
   });
 };
 
+const getGoalManagerRecipientIds = async (goal, fallbackManagerId = null) => {
+  const ids = new Set();
+
+  const addId = (value) => {
+    if (!value) {
+      return;
+    }
+
+    const normalized = String(value._id || value);
+    if (normalized) {
+      ids.add(normalized);
+    }
+  };
+
+  addId(goal?.managerId);
+  addId(fallbackManagerId);
+
+  if (goal?.ownerId) {
+    const owner =
+      typeof goal.ownerId === "object" && goal.ownerId !== null && "managerId" in goal.ownerId
+        ? goal.ownerId
+        : await User.findById(goal.ownerId).select("managerId");
+    addId(owner?.managerId);
+  }
+
+  return [...ids];
+};
+
+const notifyManagersForGoal = async ({
+  goal,
+  fallbackManagerId = null,
+  title,
+  message,
+  type = "info"
+}) => {
+  const managerIds = await getGoalManagerRecipientIds(goal, fallbackManagerId);
+
+  if (!managerIds.length) {
+    return;
+  }
+
+  await Promise.all(
+    managerIds.map((userId) =>
+      createGoalNotification({
+        userId,
+        title,
+        message,
+        type,
+        role: "Manager",
+        goalId: goal._id
+      })
+    )
+  );
+};
+
 const {
   isWithinRange,
   validateGoalRules,
@@ -189,13 +244,11 @@ const createGoal = async (req, res) => {
 
   await logAudit(req.user._id, "GOAL_CREATED", null, goal.toObject());
 
-  await createGoalNotification({
-    userId: req.user.managerId || req.user._id,
+  await notifyManagersForGoal({
+    goal,
+    fallbackManagerId: req.user.managerId,
     title: "New Draft Goal Created",
-    message: `${req.user.name} created draft goal "${goal.title}".`,
-    type: "info",
-    role: "Manager",
-    goalId: goal._id
+    message: `${req.user.name} created draft goal "${goal.title}".`
   });
 
   res.status(201).json({ message: "Goal created successfully", goal });
@@ -217,13 +270,11 @@ const updateGoal = async (req, res) => {
     goal.weightage = req.body.weightage ?? goal.weightage;
     await goal.save();
     await logAudit(req.user._id, "GOAL_UPDATED", before, goal.toObject());
-    await createGoalNotification({
-      userId: req.user.managerId || req.user._id,
+    await notifyManagersForGoal({
+      goal,
+      fallbackManagerId: req.user.managerId,
       title: "Shared Goal Weightage Updated",
-      message: `${req.user.name} updated weightage for "${goal.title}".`,
-      type: "info",
-      role: "Manager",
-      goalId: goal._id
+      message: `${req.user.name} updated weightage for "${goal.title}".`
     });
     return res.json({ message: "Goal updated successfully", goal });
   } else {
@@ -246,13 +297,11 @@ const updateGoal = async (req, res) => {
     goal.weightage = req.body.weightage ?? goal.weightage;
     await goal.save();
     await logAudit(req.user._id, "GOAL_UPDATED", before, goal.toObject());
-    await createGoalNotification({
-      userId: req.user.managerId || req.user._id,
+    await notifyManagersForGoal({
+      goal,
+      fallbackManagerId: req.user.managerId,
       title: "Draft Goal Updated",
-      message: `${req.user.name} updated draft goal "${goal.title}".`,
-      type: "info",
-      role: "Manager",
-      goalId: goal._id
+      message: `${req.user.name} updated draft goal "${goal.title}".`
     });
     return res.json({ message: "Goal updated successfully", goal });
   }
@@ -297,14 +346,14 @@ const submitAllGoals = async (req, res) => {
     await goal.save();
   }
 
-  await createGoalNotification({
-    userId: req.user.managerId || req.user._id,
-    title: "Goals Submitted",
-    message: `${req.user.name} submitted goals for approval.`,
-    type: "info",
-    role: "Manager",
-    goalId: goals[0]?._id
-  });
+  if (goals[0]) {
+    await notifyManagersForGoal({
+      goal: goals[0],
+      fallbackManagerId: req.user.managerId,
+      title: "Goals Submitted",
+      message: `${req.user.name} submitted goals for approval.`
+    });
+  }
 
   const manager = await User.findById(req.user.managerId);
   if (manager) {
@@ -809,13 +858,11 @@ const saveActuals = async (req, res) => {
 
   await logAudit(req.user._id, "GOAL_ACTUALS_UPDATED", before, goal.toObject());
 
-  await createGoalNotification({
-    userId: goal.managerId,
+  await notifyManagersForGoal({
+    goal,
+    fallbackManagerId: req.user.managerId,
     title: "Achievement Updated",
-    message: `${req.user.name} updated actuals for "${goal.title}".`,
-    type: "info",
-    role: "Manager",
-    goalId: goal._id
+    message: `${req.user.name} updated actuals for "${goal.title}".`
   });
 
   res.json({ message: "Actual achievement saved", goal });
@@ -866,13 +913,11 @@ const submitCheckin = async (req, res) => {
   await goal.save();
   await logAudit(req.user._id, "GOAL_CHECKIN_SUBMITTED", null, record);
 
-  await createGoalNotification({
-    userId: goal.managerId,
+  await notifyManagersForGoal({
+    goal,
+    fallbackManagerId: req.user.managerId,
     title: "Quarterly Check-In Submitted",
-    message: `${req.user.name} submitted a check-in for "${goal.title}".`,
-    type: "info",
-    role: "Manager",
-    goalId: goal._id
+    message: `${req.user.name} submitted a check-in for "${goal.title}".`
   });
 
   await sendTeamsNotification(
@@ -931,7 +976,7 @@ const requestManagerEditAccess = async (req, res) => {
         title: "Manager Requested Edit Access",
         message: `${req.user.name} requested 24-hour edit access for "${goal.title}".`,
         type: "warning",
-        link: buildGoalPageLink("Admin", goal._id),
+        link: `/public/pages/admin-dashboard.html#manager-access-requests`,
         entityType: "goal",
         entityId: String(goal._id)
       }))

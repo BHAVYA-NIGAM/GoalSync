@@ -1,9 +1,18 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const user = requireAuth();
+  let user = requireAuth();
   if (!user) return;
 
+  const liveUser = await syncSessionUser();
+  if (!liveUser) return;
+  user = liveUser;
+
   setSidebar("goals");
-  setHeader("Goal Setup", "Create draft goals, validate weightage, and submit for approval.");
+  setHeader(
+    "Goal Setup",
+    user.role === "Employee"
+      ? "Create draft goals, validate weightage, and submit for approval."
+      : "Review active goals and open goal details from the shared list."
+  );
   fillUserPanel();
 
   document.getElementById("logout-btn")?.addEventListener("click", logout);

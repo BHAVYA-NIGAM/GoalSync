@@ -1,36 +1,42 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Employee Dashboard - GoalSync</title>
     <link rel="stylesheet" href="/public/css/style.css" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=notifications" />
-    
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
-</head>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=notifications"
+    />
+    <link rel="icon" type="image/x-icon" href="/public/favicon.png" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.5/purify.min.js"></script>
+  </head>
   <body>
     <div class="app-shell">
-    <div class="layout">
-      <aside class="sidebar">
-        <div class="brand-panel">
-          <div class="brand-mark">GS</div>
-          <div class="brand">GoalSync</div>
-          <p>Employee workspace for planning goals, submitting quarterly updates, and tracking approval status.</p>
-        </div>
-        <nav class="nav-links" data-sidebar></nav>
-      </aside>
-      <main class="main">
-        <div class="topbar">
-          <div class="page-title">
-            <h1 id="page-title"></h1>
-            <p id="page-text"></p>
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="brand-panel">
+            <div class="brand-mark">GS</div>
+            <div class="brand">GoalSync</div>
+            <p>
+              Employee workspace for planning goals, submitting quarterly
+              updates, and tracking approval status.
+            </p>
           </div>
-          <div class="topbar-right">
-            <div class="profile-box" data-topbar-user></div>
+          <nav class="nav-links" data-sidebar></nav>
+        </aside>
+        <main class="main">
+          <div class="topbar">
+            <div class="page-title">
+              <h1 id="page-title"></h1>
+              <p id="page-text"></p>
+            </div>
+            <div class="topbar-right">
+              <div class="profile-box" data-topbar-user></div>
+            </div>
           </div>
-        </div>
-        <!-- <section class="hero-banner">
+          <!-- <section class="hero-banner">
           <h2>Stay aligned on targets, approvals, and progress.</h2>
           <p>Use this dashboard to monitor your goal sheet, shared KPIs, and achievement capture across the active cycle.</p>
           <div class="info-grid">
@@ -39,52 +45,58 @@
             <div class="info-pill"><span>Shared Goals</span><strong>Weightage stays editable while title and target remain locked.</strong></div>
           </div>
         </section> -->
-        <section id="stats" class="grid stats-grid"></section>
-        <section class="split" style="margin-top: 20px;">
-          <div class="card content-card">
-            <h3>Goal Progress</h3>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Thrust Area</th>
-                    <th>Goal</th>
-                    <th>Status</th>
-                    <th>Weightage</th>
-                    <th>Achievement</th>
-                    <th>Progress</th>
-                  </tr>
-                </thead>
-                <tbody id="goal-table-body"></tbody>
-              </table>
+          <section id="stats" class="grid stats-grid"></section>
+          <section class="split" style="margin-top: 20px">
+            <div class="card content-card">
+              <h3>Goal Progress</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Thrust Area</th>
+                      <th>Goal</th>
+                      <th>Status</th>
+                      <th>Weightage</th>
+                      <th>Achievement</th>
+                      <th>Progress</th>
+                    </tr>
+                  </thead>
+                  <tbody id="goal-table-body"></tbody>
+                </table>
+              </div>
             </div>
-          </div>
-          <div class="card content-card">
-            <h3>Notifications</h3>
-            <div id="notifications" class="notification-list"></div>
-          </div>
-        </section>
-      </main>
-    </div>
+            <div class="card content-card">
+              <h3>Notifications</h3>
+              <div id="notifications" class="notification-list"></div>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
     <div class="modal" id="goal-detail-modal">
-      <div class="card modal-content" style="max-width: 760px;">
+      <div class="card modal-content" style="max-width: 760px">
         <div class="topbar">
           <div>
-            <h3 id="goal-detail-title" style="margin:0;">Goal Details</h3>
+            <h3 id="goal-detail-title" style="margin: 0">Goal Details</h3>
             <p class="muted" id="goal-detail-progress">Not Started</p>
           </div>
-          <button class="btn btn-secondary" type="button" onclick="closeModal('goal-detail-modal')">Close</button>
+          <button
+            class="btn btn-secondary"
+            type="button"
+            onclick="closeModal('goal-detail-modal')"
+          >
+            Close
+          </button>
         </div>
-        <input type="hidden" id="goal-detail-id">
+        <input type="hidden" id="goal-detail-id" />
         <div class="form-grid">
           <div class="field">
             <label>Thrust Area</label>
-            <input id="goal-detail-thrust-area" type="text">
+            <input id="goal-detail-thrust-area" type="text" />
           </div>
           <div class="field">
             <label>Goal Title</label>
-            <input id="goal-detail-name" type="text">
+            <input id="goal-detail-name" type="text" />
           </div>
           <div class="field">
             <label>Description</label>
@@ -103,11 +115,11 @@
           </div>
           <div class="field">
             <label>Target</label>
-            <input id="goal-detail-target" type="number" min="0">
+            <input id="goal-detail-target" type="number" min="0" />
           </div>
           <div class="field">
             <label>Weightage</label>
-            <input id="goal-detail-weightage" type="number" min="0" max="100">
+            <input id="goal-detail-weightage" type="number" min="0" max="100" />
           </div>
           <div class="field">
             <label>Status</label>
@@ -122,11 +134,14 @@
           </div>
           <div class="field">
             <label>Deadline</label>
-            <input id="goal-detail-deadline" type="date">
+            <input id="goal-detail-deadline" type="date" />
           </div>
           <div class="field">
             <label>Manager Remarks</label>
-            <div id="goal-detail-manager-comment" class="notification-item small-text"></div>
+            <div
+              id="goal-detail-manager-comment"
+              class="notification-item small-text"
+            ></div>
           </div>
           <div class="field">
             <label>Comment / Review Note</label>
@@ -134,7 +149,10 @@
           </div>
           <div class="field">
             <label>Access Control</label>
-            <div id="goal-detail-access-note" class="notification-item small-text"></div>
+            <div
+              id="goal-detail-access-note"
+              class="notification-item small-text"
+            ></div>
           </div>
           <div class="field">
             <label>Assigned Employees</label>
@@ -154,11 +172,47 @@
             </div>
           </div>
           <div class="toolbar">
-            <button id="goal-detail-save-btn" class="btn btn-primary" type="button" onclick="saveGoalDetailsFromModal()">Save Goal</button>
-            <button id="goal-detail-approve-btn" class="btn btn-success" type="button" onclick="approveGoalFromModal()">Approve</button>
-            <button id="goal-detail-rework-btn" class="btn btn-warning" type="button" onclick="reworkGoalFromModal()">Rework</button>
-            <button id="goal-detail-reject-btn" class="btn btn-danger" type="button" onclick="rejectGoalFromModal()">Reject</button>
-            <button id="goal-detail-access-btn" class="btn btn-secondary" type="button" onclick="requestGoalEditAccess()" style="display:none;">Request 24h Access</button>
+            <button
+              id="goal-detail-save-btn"
+              class="btn btn-primary"
+              type="button"
+              onclick="saveGoalDetailsFromModal()"
+            >
+              Save Goal
+            </button>
+            <button
+              id="goal-detail-approve-btn"
+              class="btn btn-success"
+              type="button"
+              onclick="approveGoalFromModal()"
+            >
+              Approve
+            </button>
+            <button
+              id="goal-detail-rework-btn"
+              class="btn btn-warning"
+              type="button"
+              onclick="reworkGoalFromModal()"
+            >
+              Rework
+            </button>
+            <button
+              id="goal-detail-reject-btn"
+              class="btn btn-danger"
+              type="button"
+              onclick="rejectGoalFromModal()"
+            >
+              Reject
+            </button>
+            <button
+              id="goal-detail-access-btn"
+              class="btn btn-secondary"
+              type="button"
+              onclick="requestGoalEditAccess()"
+              style="display: none"
+            >
+              Request 24h Access
+            </button>
           </div>
         </div>
       </div>

@@ -14,7 +14,11 @@ const goalRoutes = require("./routes/goalRoutes");
 const managerRoutes = require("./routes/managerRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const errorMiddleware = require("./middleware/errorMiddleware");
-const { startEscalationEngine, runEscalationChecks } = require("./utils/escalationService");
+const {
+  deleteExpiredEscalations,
+  startEscalationEngine,
+  runEscalationChecks,
+} = require("./utils/escalationService");
 const User = require("./models/User");
 const axios = require("axios");
 
@@ -22,33 +26,46 @@ dotenv.config();
 
 const app = express();
 
-app.use(helmet({
-  contentSecurityPolicy: false, // Disabling CSP for now to not break the frontend inline scripts, ideally configure this strictly.
-  crossOriginEmbedderPolicy: false
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // Disabling CSP for now to not break the frontend inline scripts, ideally configure this strictly.
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 app.use(compression());
 app.use(cookieParser(process.env.COOKIE_SECRET || "default_cookie_secret"));
 
-app.use(cors({
-  origin: process.env.APP_URL || "http://localhost:5000",
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.APP_URL || "http://localhost:5000",
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const { generateCsrfToken, doubleCsrfProtection } = doubleCsrf({
   getSecret: () => process.env.COOKIE_SECRET || "default_cookie_secret",
-  cookieName: "__Host-psifi.x-csrf-token",
+
+  getSessionIdentifier: (req) => {
+    return req.user?.id || "anonymous";
+  },
+
+  cookieName: "x-csrf-token",
+
   cookieOptions: {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: process.env.NODE_ENV === "production"
+    secure: false,
   },
+
   size: 64,
+
   ignoredMethods: ["GET", "HEAD", "OPTIONS"],
-  getTokenFromRequest: (req) => req.headers["x-csrf-token"]
+
+  getTokenFromRequest: (req) => req.headers["x-csrf-token"],
 });
 
 app.get("/api/csrf-token", (req, res) => {
@@ -119,8 +136,17 @@ let server;
 const startServer = async () => {
   try {
     await connectDB();
+    const Notification = require("./models/Notification");
+
+    await Notification.deleteMany({
+      type: "warning",
+      createdAt: {
+        $lt: new Date(Date.now() - 60 * 60 * 1000),
+      },
+    });
     server = app.listen(PORT, async () => {
       await seedDefaultAdmin();
+      await deleteExpiredEscalations();
       await runEscalationChecks();
       startEscalationEngine();
       console.log(`Server running on port ${PORT}`);
@@ -149,13 +175,13 @@ const shutdown = () => {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
-const URL = 'https://goalsync-e13q.onrender.com';
+const URL = "https://goalsync-e13q.onrender.com";
 
 setInterval(async () => {
   try {
     const response = await axios.get(URL);
-    console.log('Pinged successfully:', response.status);
+    console.log("Pinged successfully:", response.status);
   } catch (err) {
-    console.log('Ping failed');
+    console.log("Ping failed");
   }
 }, 30000);

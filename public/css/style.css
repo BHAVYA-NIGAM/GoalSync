@@ -384,6 +384,19 @@ textarea {
   -webkit-overflow-scrolling: touch;
 }
 
+.table-wrap-scroll-7 {
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.table-wrap-scroll-7 thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -487,6 +500,10 @@ th {
   border: 1px solid var(--border);
   border-radius: 14px;
   background: #fbfdff;
+}
+
+.access-request-row-focus {
+  background: rgba(255, 244, 229, 0.92);
 }
 
 .notification-item-unread {

@@ -21,6 +21,21 @@ document.addEventListener("DOMContentLoaded", async () => {
   startAutoRefresh(loadCheckinGoals);
 });
 
+let checkinWindowState = {
+  key: "",
+  label: "",
+  active: false,
+  canEdit: false
+};
+
+const CHECKIN_SCHEDULE = [
+  { key: "GOAL_SETTING", label: "Phase 1", month: 5, day: 1 },
+  { key: "Q1", label: "Q1 Check-In", month: 7, day: 1 },
+  { key: "Q2", label: "Q2 Check-In", month: 10, day: 1 },
+  { key: "Q3", label: "Q3 Check-In", month: 1, day: 1 },
+  { key: "Q4", label: "Q4 / Annual", month: 3, day: 1 }
+];
+
 async function loadCheckinGoals() {
   try {
     const data = await apiFetch("/goals");
@@ -30,12 +45,81 @@ async function loadCheckinGoals() {
   }
 }
 
+function getNextWindowWindowInfo(currentWindow) {
+  const now = new Date();
+  const candidates = CHECKIN_SCHEDULE.map((item) => {
+    let year = now.getFullYear();
+
+    if (item.month < now.getMonth() + 1) {
+      year += 1;
+    }
+
+    let opensAt = new Date(year, item.month - 1, item.day, 0, 0, 0, 0);
+
+    if (currentWindow?.key === item.key && currentWindow?.active) {
+      opensAt = new Date(year + 1, item.month - 1, item.day, 0, 0, 0, 0);
+    }
+
+    return {
+      ...item,
+      opensAt
+    };
+  }).sort((a, b) => a.opensAt - b.opensAt);
+
+  return candidates.find((item) => item.opensAt > now) || candidates[0];
+}
+
+function formatDaysUntil(date) {
+  const now = new Date();
+  const diffMs = Math.max(0, date.getTime() - now.getTime());
+  const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (days === 0) {
+    return "Opens today";
+  }
+
+  if (days === 1) {
+    return "1 day left";
+  }
+
+  return `${days} days left`;
+}
+
+function renderWindowCountdown(currentWindow) {
+  const currentWindowName = document.getElementById("current-window-name");
+  const nextWindowName = document.getElementById("next-window-name");
+  const nextWindowCountdown = document.getElementById("next-window-countdown");
+  const nextWindow = getNextWindowWindowInfo(currentWindow);
+
+  if (currentWindowName) {
+    currentWindowName.textContent = currentWindow?.label || "Closed";
+  }
+
+  if (nextWindowName) {
+    nextWindowName.textContent = nextWindow?.label || "Not available";
+  }
+
+  if (nextWindowCountdown) {
+    nextWindowCountdown.textContent = nextWindow
+      ? `${formatDaysUntil(nextWindow.opensAt)} to open next window`
+      : "Schedule unavailable";
+  }
+}
+
 function renderCheckinGoals(goals, currentWindow) {
   const user = getUser();
   const isEmployee = user?.role === "Employee";
+  const canEditCheckins = currentWindow?.active && ["Q1", "Q2", "Q3", "Q4"].includes(currentWindow?.key);
+  checkinWindowState = {
+    key: currentWindow?.key || "",
+    label: currentWindow?.label || "",
+    active: Boolean(currentWindow?.active),
+    canEdit: Boolean(canEditCheckins)
+  };
   const approvedGoals = goals.filter((goal) => goal.status === "Approved");
 
   document.getElementById("active-quarter").textContent = `Active Window: ${currentWindow.label}`;
+  renderWindowCountdown(currentWindow);
   document.getElementById("checkin-table-title").textContent = isEmployee
     ? "Approved Goals Ready for Check-In"
     : user?.role === "Manager"
@@ -61,7 +145,9 @@ function renderCheckinGoals(goals, currentWindow) {
         <td class="inline-actions">
           ${
             isEmployee
-              ? `<button class="btn btn-primary" onclick="openCheckinModal('${goal._id}', '${goal.title.replace(/'/g, "\\'")}')">Update</button>`
+              ? canEditCheckins
+                ? `<button class="btn btn-primary" onclick="openCheckinModal('${goal._id}', '${goal.title.replace(/'/g, "\\'")}')">Update</button>`
+                : `<button class="btn btn-secondary" type="button" disabled>Window Closed</button>`
               : `<button class="btn btn-secondary" onclick="openNotificationTarget('${buildRoleGoalLink(user?.role, goal._id)}')">Open Goal</button>`
           }
         </td>
@@ -80,7 +166,9 @@ function renderCheckinGoals(goals, currentWindow) {
   const actionBar = document.getElementById("checkin-action-note");
   if (actionBar) {
     actionBar.textContent = isEmployee
-      ? "Employees can update actuals and submit the active quarter check-in from here."
+      ? canEditCheckins
+        ? "Employees can update actuals and submit the active quarter check-in from here."
+        : "Check-in updates are closed right now. Actuals can only be updated during an active quarterly window."
       : "Managers and admins can monitor check-in progress here and jump directly into the matching goal."
   }
 }
@@ -97,6 +185,14 @@ function buildRoleGoalLink(role, goalId) {
 }
 
 function openCheckinModal(id, title) {
+  if (!checkinWindowState.canEdit) {
+    showToast(
+      `Check-in updates are unavailable right now. Active window: ${checkinWindowState.label || "Closed"}`,
+      "error"
+    );
+    return;
+  }
+
   document.getElementById("checkinGoalId").value = id;
   document.getElementById("checkin-goal-title").textContent = title;
   openModal("checkin-modal");

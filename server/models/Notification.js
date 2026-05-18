@@ -5,40 +5,50 @@ const notificationSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
     title: {
       type: String,
-      required: true
+      required: true,
     },
     message: {
       type: String,
-      required: true
+      required: true,
     },
     read: {
       type: Boolean,
-      default: false
+      default: false,
     },
     type: {
       type: String,
-      default: "info"
+      default: "info",
     },
     link: {
       type: String,
-      default: ""
+      default: "",
     },
     entityType: {
       type: String,
-      default: ""
+      default: "",
     },
     entityId: {
       type: String,
-      default: ""
-    }
+      default: "",
+    },
   },
   {
-    timestamps: true
-  }
+    timestamps: true,
+  },
+);
+
+notificationSchema.index(
+  { createdAt: 1 },
+  {
+    expireAfterSeconds: 60 * 60,
+    partialFilterExpression: {
+      type: "warning",
+    },
+  },
 );
 
 module.exports = mongoose.model("Notification", notificationSchema);

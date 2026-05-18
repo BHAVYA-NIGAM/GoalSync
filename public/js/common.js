@@ -85,6 +85,7 @@ function getUser() {
 function saveSession(data) {
   localStorage.setItem("token", data.token);
   localStorage.setItem("user", JSON.stringify(data.user));
+  csrfToken = null;
 }
 
 function normalizeSessionUser(user) {
@@ -123,28 +124,51 @@ async function syncSessionUser() {
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  csrfToken = null;
   window.location.href = "/public/pages/login.html";
 }
 
 async function apiFetch(url, options = {}) {
-  const headers = options.headers || {};
-  
-  if (options.method && options.method.toUpperCase() !== "GET") {
-    const token = await fetchCsrfToken();
-    if (token) {
-      headers["x-csrf-token"] = token;
+  const method = (options.method || "GET").toUpperCase();
+  const authToken = getToken();
+
+  const buildHeaders = async (forceRefreshCsrf = false) => {
+    const headers = { ...(options.headers || {}) };
+
+    if (authToken) {
+      headers.Authorization = `Bearer ${authToken}`;
     }
-  }
 
-  if (!(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json";
-  }
+    if (method !== "GET") {
+      if (forceRefreshCsrf) {
+        csrfToken = null;
+      }
 
-  const response = await fetch(`${API_BASE}${url}`, {
-    ...options,
-    headers,
-    credentials: "include"
-  });
+      const token = await fetchCsrfToken();
+      if (token) {
+        headers["x-csrf-token"] = token;
+      }
+    }
+
+    if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    return headers;
+  };
+
+  const runRequest = async (forceRefreshCsrf = false) =>
+    fetch(`${API_BASE}${url}`, {
+      ...options,
+      headers: await buildHeaders(forceRefreshCsrf),
+      credentials: "include"
+    });
+
+  let response = await runRequest();
+
+  if (response.status === 403 && method !== "GET") {
+    response = await runRequest(true);
+  }
 
   if (response.status === 401) {
     logout();

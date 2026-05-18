@@ -104,8 +104,16 @@ function renderAdminDashboard(data) {
         <td>${goal.department}</td>
         <td><button class="btn btn-secondary" onclick="openGoalDetailsModal('${goal.id}')">${goal.title}</button></td>
         <td>${goal.status}</td>
-        <td><span class="read-only-chip">Edit in popup</span></td>
-        <td><button class="btn btn-warning" onclick="unlockGoal('${goal.id}')">Unlock</button></td>
+        <td>${
+          goal.editAccessStatus === "pending"
+            ? `<button class="btn btn-secondary" onclick="scrollToAccessRequest('${goal.id}')">Manager Requested Edit-Access</button>`
+            : `<span class="read-only-chip">Edit in popup</span>`
+        }</td>
+        <td>${
+          goal.editAccessStatus === "pending"
+            ? `<button class="btn btn-primary" onclick="scrollToAccessRequest('${goal.id}')">Open Request</button>`
+            : `<button class="btn btn-warning" onclick="unlockGoal('${goal.id}')">Unlock</button>`
+        }</td>
       </tr>
     `
       )
@@ -116,7 +124,7 @@ function renderAdminDashboard(data) {
     (data.accessRequests || [])
       .map(
         (item) => `
-      <tr>
+      <tr id="access-request-row-${item.id}">
         <td>${item.requestedBy || "-"}</td>
         <td>${item.employee}</td>
         <td>${item.title}</td>
@@ -135,6 +143,24 @@ function renderAdminDashboard(data) {
       )
       .join("") || '<tr><td colspan="7" class="empty-state">No manager access requests.</td></tr>'
   );
+}
+
+function scrollToAccessRequest(goalId) {
+  const section = document.getElementById("manager-access-requests");
+  const row = document.getElementById(`access-request-row-${goalId}`);
+
+  document
+    .querySelectorAll(".access-request-row-focus")
+    .forEach((item) => item.classList.remove("access-request-row-focus"));
+
+  section?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  if (row) {
+    setTimeout(() => {
+      row.classList.add("access-request-row-focus");
+      row.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 180);
+  }
 }
 
 async function unlockGoal(id) {

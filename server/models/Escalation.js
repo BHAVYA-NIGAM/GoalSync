@@ -42,4 +42,6 @@ const escalationSchema = new mongoose.Schema(
   }
 );
 
+escalationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 });
+
 module.exports = mongoose.model("Escalation", escalationSchema);

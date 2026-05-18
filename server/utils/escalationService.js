@@ -3,8 +3,22 @@ const Goal = require("../models/Goal");
 const User = require("../models/User");
 const Escalation = require("../models/Escalation");
 const Notification = require("../models/Notification");
-const { sendEmail, buildAppLink, buildEmailTemplate } = require("./emailService");
+const {
+  sendEmail,
+  buildAppLink,
+  buildEmailTemplate,
+} = require("./emailService");
 const { sendTeamsNotification } = require("./teamsService");
+
+const ESCALATION_TTL_MS = 60 * 60 * 1000;
+
+const getEscalationCutoff = () => new Date(Date.now() - ESCALATION_TTL_MS);
+
+const deleteExpiredEscalations = async () => {
+  await Escalation.deleteMany({
+    createdAt: { $lt: getEscalationCutoff() },
+  });
+};
 
 const buildEscalationLink = (user, goalId) => {
   const page =
@@ -21,12 +35,20 @@ const buildEscalationLink = (user, goalId) => {
     : `/public/pages/${page}`;
 };
 
-const createEscalation = async (targetUserId, message, triggeredBy, goalId = null) => {
+const createEscalation = async (
+  targetUserId,
+  message,
+  triggeredBy,
+  goalId = null,
+) => {
+  await deleteExpiredEscalations();
+
   const existing = await Escalation.findOne({
     targetUserId,
     goalId,
     triggeredBy,
-    resolved: false
+    resolved: false,
+    createdAt: { $gte: getEscalationCutoff() },
   });
 
   let escalation = existing;
@@ -35,7 +57,7 @@ const createEscalation = async (targetUserId, message, triggeredBy, goalId = nul
       targetUserId,
       goalId,
       triggeredBy,
-      message
+      message,
     });
   } else if (escalation.retryCount >= 3) {
     return; // Max retries reached
@@ -46,7 +68,7 @@ const createEscalation = async (targetUserId, message, triggeredBy, goalId = nul
       userId: targetUserId,
       title: "Escalation Alert",
       message,
-      type: "warning"
+      type: "warning",
     });
 
     const user = await User.findById(targetUserId);
@@ -59,19 +81,23 @@ const createEscalation = async (targetUserId, message, triggeredBy, goalId = nul
         message,
         ctaLabel: "Review in GoalSync",
         ctaUrl: link,
-        metaLines: [`Trigger: ${triggeredBy.replace(/_/g, " ")}`]
+        metaLines: [`Trigger: ${triggeredBy.replace(/_/g, " ")}`],
       });
 
       await sendEmail({
         to: user.email,
         subject: "GoalSync Escalation Alert",
         html: email.html,
-        text: email.text
+        text: email.text,
       });
 
-      await sendTeamsNotification("GoalSync Escalation", message, buildAppLink(link));
+      await sendTeamsNotification(
+        "GoalSync Escalation",
+        message,
+        buildAppLink(link),
+      );
     }
-    
+
     escalation.lastAttempt = new Date();
     await escalation.save();
   } catch (error) {
@@ -83,6 +109,8 @@ const createEscalation = async (targetUserId, message, triggeredBy, goalId = nul
 };
 
 const runEscalationChecks = async () => {
+  await deleteExpiredEscalations();
+
   const employees = await User.find({ role: "Employee" });
 
   for (const employee of employees) {
@@ -92,7 +120,7 @@ const runEscalationChecks = async () => {
       await createEscalation(
         employee._id,
         "No goals have been created or submitted for the current cycle.",
-        "goal_not_submitted"
+        "goal_not_submitted",
       );
     }
 
@@ -101,23 +129,34 @@ const runEscalationChecks = async () => {
       await createEscalation(
         employee.managerId,
         `There are ${pendingGoals.length} pending goal approvals for ${employee.name}.`,
-        "approval_pending"
+        "approval_pending",
       );
     }
 
     const approvedGoals = goals.filter((goal) => goal.status === "Approved");
-    const missingCheckins = approvedGoals.filter((goal) => !goal.checkins.length);
+    const missingCheckins = approvedGoals.filter(
+      (goal) => !goal.checkins.length,
+    );
     if (missingCheckins.length) {
       await createEscalation(
         employee._id,
         `You have ${missingCheckins.length} approved goals without a quarterly check-in.`,
-        "checkin_incomplete"
+        "checkin_incomplete",
       );
     }
   }
 };
 
 const startEscalationEngine = () => {
+  cron.schedule("*/10 * * * *", async () => {
+    try {
+      await deleteExpiredEscalations();
+      console.log("Expired escalation cleanup completed");
+    } catch (error) {
+      console.error("Escalation cleanup error:", error.message);
+    }
+  });
+
   cron.schedule("0 9 * * 1", async () => {
     try {
       await runEscalationChecks();
@@ -128,4 +167,10 @@ const startEscalationEngine = () => {
   });
 };
 
-module.exports = { startEscalationEngine, runEscalationChecks };
+module.exports = {
+  ESCALATION_TTL_MS,
+  getEscalationCutoff,
+  deleteExpiredEscalations,
+  startEscalationEngine,
+  runEscalationChecks,
+};
